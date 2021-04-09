@@ -65,7 +65,7 @@ class CI_DB_pdo_driver extends CI_DB {
 			//Prior to this version, the charset can't be set in the dsn
 			if(is_php('5.3.6'))
 			{
-				$this->dsn .= ";charset={$this->char_set}";
+                $this->dsn_replace('charset', $this->char_set);
 			}
 
 			//Set the charset with the connection options
@@ -88,9 +88,33 @@ class CI_DB_pdo_driver extends CI_DB {
 	}
 
     /**
+     * Find and replace a item of the DSN
+     *
+     * @param string
+     * @param string
+     * @param string
+     * @return void
+     */
+	function dsn_replace($key, $value, $sep = ';')
+    {
+        $pattern = "/;{$key}=\w+/i";
+        $replacement = "{$sep}{$key}={$value}";
+        $result = preg_filter($pattern, $replacement, $this->dsn);
+        if (is_null($result)) // Can not find
+        {
+            $this->dsn .= $replacement;
+        }
+        else
+        {
+            $this->dsn = $result;
+        }
+    }
+
+    /**
      * Build database DSN
      *
      * @access	private called by the base class
+     * @param string
      * @return	string
      */
     function db_dsn($database = '')
@@ -98,14 +122,14 @@ class CI_DB_pdo_driver extends CI_DB {
         if(empty($this->dsn))
         {
             $this->dsn = $this->subdriver . ":host={$this->hostname}";
-            if(is_numeric($this->port) AND $this->port > 0)
-            {
-                $this->dsn .= ";port={$this->port}";
-            }
+        }
+        if(is_numeric($this->port) AND $this->port > 0)
+        {
+            $this->dsn_replace('port', $this->port);
         }
         if(!empty($database))
         {
-            $this->dsn .= ";dbname={$database}";
+            $this->dsn_replace('dbname', $database);
         }
         if(empty($this->subdriver))
         {
